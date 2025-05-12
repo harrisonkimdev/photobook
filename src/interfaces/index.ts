@@ -12,6 +12,7 @@ export interface IAlbum extends Document {
   createdAt: Date
   updatedAt: Date
 }
+
 export interface IPhoto extends Document {
   _id: string
   albumId: string
@@ -22,13 +23,17 @@ export interface IPhoto extends Document {
   createdAt: Date
   updatedAt: Date
 }
+
 export interface IComment extends Document {
   _id: string
-  photoId: Schema.Types.ObjectId
+  photoId: string
   username: string
   text: string
   password: string
   vote: number
+  isOriginalRequest: boolean
+  originalRequestStatus: 'pending' | 'approved' | 'rejected'
+  replyTo?: string
   createdAt: Date
   updatedAt: Date
 }

@@ -9,21 +9,43 @@ const commonSchemaFields = {
 
 // Comment Schema
 const commentSchema = new Schema<IComment>({
-  photoId: { type: Schema.Types.String, ref: "Photo", required: true, index: true },
+  photoId: { type: String, ref: "Photo", required: true, index: true },
   username: { type: String, required: true },
   text: { type: String, required: true },
   password: { type: String, required: true },
   vote: { type: Number, default: 0 },
+  isOriginalRequest: { type: Boolean, default: false },
+  originalRequestStatus: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  replyTo: { type: String, ref: "Comment" },
   ...commonSchemaFields,
 });
 
+// Comment methods
 commentSchema.methods.incrementVote = function() {
   this.vote += 1;
   return this.save();
 };
 
+commentSchema.methods.updateOriginalRequestStatus = function(status: 'pending' | 'approved' | 'rejected') {
+  this.originalRequestStatus = status;
+  return this.save();
+};
+
+// Comment statics
 commentSchema.statics.findByPhotoId = function(photoId) {
-  return this.find({ photoId });
+  return this.find({ photoId }).sort({ createdAt: -1 });
+};
+
+commentSchema.statics.findOriginalRequests = function(photoId) {
+  return this.find({ 
+    photoId, 
+    isOriginalRequest: true,
+    originalRequestStatus: 'pending'
+  }).sort({ createdAt: -1 });
 };
 
 // Photo Schema
