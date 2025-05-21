@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation';
 export interface IPasswordFormWrapperProps {
   albumId?: string;
   onAuthenticated?: () => void;
+  children?: React.ReactNode;
 }
 
-export default function PasswordFormWrapper({ albumId, onAuthenticated }: IPasswordFormWrapperProps) {
+export default function PasswordFormWrapper({ albumId, onAuthenticated, children }: IPasswordFormWrapperProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,6 +36,7 @@ export default function PasswordFormWrapper({ albumId, onAuthenticated }: IPassw
       const data = await response.json();
 
       if (response.ok) {
+        setIsAuthenticated(true);
         if (onAuthenticated) {
           onAuthenticated();
         } else {
@@ -42,12 +45,16 @@ export default function PasswordFormWrapper({ albumId, onAuthenticated }: IPassw
       } else {
         setError(data.message || 'Invalid password');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    return <>{children}</>;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

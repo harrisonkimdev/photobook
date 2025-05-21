@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CldImage } from 'next-cloudinary';
-import Navigation from '../../../(components)/(layouts)/Navigation';
+import Navigation from '@/app/(components)/(layouts)/Navigation';
 import { IAlbum } from '@/types/album';
 import { useParams } from 'next/navigation';
 import PasswordFormWrapper from '@/app/(components)/PasswordFormWrapper';

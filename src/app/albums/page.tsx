@@ -14,13 +14,26 @@ export default function AlbumsPage() {
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
+        console.log('Fetching albums...');
         const response = await fetch('/api/albums');
+        console.log('API Response status:', response.status);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch albums');
         }
+        
         const data = await response.json();
+        console.log('API Response data:', data);
+        console.log('Albums array:', data.albums);
+        
+        if (!Array.isArray(data.albums)) {
+          console.error('Albums data is not an array:', data.albums);
+          throw new Error('Invalid albums data format');
+        }
+        
         setAlbums(data.albums);
       } catch (err) {
+        console.error('Error in fetchAlbums:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);

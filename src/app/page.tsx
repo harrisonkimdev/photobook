@@ -1,28 +1,10 @@
 "use client"
 
-import { IAlbum } from "@/interfaces"
 import { CldImage } from 'next-cloudinary'
 import Link from "next/link"
-import { useState, useEffect } from "react"
 import Navigation from './(components)/(layouts)/Navigation'
 
 export default function Home() {
-  const [albums, setAlbums] = useState<IAlbum[]>([])
-  
-  useEffect(() => {
-    const fetchAlubms = async () => {
-      try {
-        const response = await fetch("/api/albums")
-        const { albums } = await response.json()
-        setAlbums(albums)
-      } catch (error) {
-        console.error("Error fetching albums", error)
-      }
-    }
-
-    fetchAlubms()  
-  }, [])
-  
   return (
     <div className="min-h-screen">
       <Navigation />
