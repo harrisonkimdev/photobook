@@ -1,80 +1,98 @@
 import { Schema, model, models } from "mongoose";
-import { IAlbum, IPhoto, IComment } from "@/interfaces";
+import { IAlbum, IPhoto } from "@/interfaces";
 
-// Common schema fields
-const commonSchemaFields = {
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-};
-
-// Comment Schema
-const commentSchema = new Schema<IComment>({
-  photoId: { type: String, ref: "Photo", required: true, index: true },
-  username: { type: String, required: true },
-  text: { type: String, required: true },
-  password: { type: String, required: true },
-  vote: { type: Number, default: 0 },
-  isOriginalRequest: { type: Boolean, default: false },
-  originalRequestStatus: { 
-    type: String, 
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+// 이미지 스키마 (내장 문서)
+const imageSchema = new Schema(
+  {
+    public_id: { type: String, required: true },
+    url: { type: String, required: true }
   },
-  replyTo: { type: String, ref: "Comment" },
-  ...commonSchemaFields,
-});
+  { _id: false }
+);
 
-// Comment methods
-commentSchema.methods.incrementVote = function() {
-  this.vote += 1;
-  return this.save();
-};
+// 앨범 스키마
+const albumSchema = new Schema<IAlbum>(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    description: {
+      type: String,
+      default: ''
+    },
+    password: {
+      type: String,
+      required: false
+    },
+    accessUrl: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true
+    },
+    thumbnail: {
+      type: imageSchema,
+      required: true
+    },
+    photos: {
+      type: [imageSchema],
+      default: []
+    },
+    isPublic: {
+      type: Boolean,
+      default: false
+    }
+  },
+  { timestamps: true }
+);
 
-commentSchema.methods.updateOriginalRequestStatus = function(status: 'pending' | 'approved' | 'rejected') {
-  this.originalRequestStatus = status;
-  return this.save();
-};
+// 사진 스키마 (필요시 사용)
+const photoSchema = new Schema<IPhoto>(
+  {
+    albumId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Album',
+      required: true,
+      index: true
+    },
+    public_id: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    filename: {
+      type: String,
+      required: true
+    },
+    size: {
+      type: Number,
+      required: true
+    },
+    width: {
+      type: Number,
+      required: false
+    },
+    height: {
+      type: Number,
+      required: false
+    },
+    format: {
+      type: String,
+      required: true
+    }
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
 
-// Comment statics
-commentSchema.statics.findByPhotoId = function(photoId) {
-  return this.find({ photoId }).sort({ createdAt: -1 });
-};
+// 인덱스 추가
+albumSchema.index({ accessUrl: 1 });
+photoSchema.index({ albumId: 1, createdAt: -1 });
 
-commentSchema.statics.findOriginalRequests = function(photoId) {
-  return this.find({ 
-    photoId, 
-    isOriginalRequest: true,
-    originalRequestStatus: 'pending'
-  }).sort({ createdAt: -1 });
-};
-
-// Photo Schema
-const photoSchema = new Schema<IPhoto>({
-  albumId: { type: String, required: true, index: true },
-  filename: { type: String, required: true },
-  type: { type: String, required: true },
-  url: { type: String, required: true },
-  format: { type: String, required: true },
-  ...commonSchemaFields,
-});
-
-// Album Schema
-const albumSchema = new Schema<IAlbum>({
-  title: { type: String, required: true },
-  date: { type: Date, default: Date.now },
-  thumbnailImage: { type: String },
-  description: { type: String },
-  password: { type: String },
-  path: { type: String, required: true },
-  photos: [{ 
-    type: Schema.Types.ObjectId, 
-    ref: "Photo",
-    required: true 
-  }],
-  ...commonSchemaFields,
-});
-
-// Export models
-export const Comment = models.Comment || model<IComment>("Comment", commentSchema);
-export const Photo = models.Photo || model<IPhoto>("Photo", photoSchema);
-export const Album = models.Album || model<IAlbum>("Album", albumSchema);
+// 모델 내보내기
+export const Album = models.Album || model<IAlbum>('Album', albumSchema);
+export const Photo = models.Photo || model<IPhoto>('Photo', photoSchema);

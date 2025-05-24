@@ -1,39 +1,30 @@
-import { Schema, Document } from "mongoose"
+import { Document, Types } from "mongoose"
+
+export interface IImage {
+  public_id: string
+  url: string
+}
 
 export interface IAlbum extends Document {
-  _id: string
   title: string
-  date: Date
-  thumbnailImage: string
   description: string
-  password: string
-  path: string
-  photos: Schema.Types.ObjectId[]
+  password?: string
+  thumbnail: IImage
+  photos: IImage[]
+  accessUrl: string
+  isPublic: boolean
   createdAt: Date
   updatedAt: Date
 }
 
 export interface IPhoto extends Document {
-  _id: string
-  albumId: string
-  filename: string
-  type: string
+  albumId: Types.ObjectId
+  public_id: string
   url: string
+  filename: string
+  size: number
+  width?: number
+  height?: number
   format: string
   createdAt: Date
-  updatedAt: Date
-}
-
-export interface IComment extends Document {
-  _id: string
-  photoId: string
-  username: string
-  text: string
-  password: string
-  vote: number
-  isOriginalRequest: boolean
-  originalRequestStatus: 'pending' | 'approved' | 'rejected'
-  replyTo?: string
-  createdAt: Date
-  updatedAt: Date
 }
