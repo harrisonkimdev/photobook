@@ -1,44 +1,34 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { v4 as uuidv4 } from 'uuid';
+import { Album } from '@/models';
+import type { IAlbum } from '@/interfaces';
 
 export async function GET() {
   try {
     console.log('GET /api/albums - Starting request');
-    const { db } = await connectToDatabase();
-    console.log('Connected to database');
     
-    const albums = await db.collection("albums").find({}).toArray();
-    console.log('Raw albums from DB:', JSON.stringify(albums, null, 2));
-    
-    // Transform the data structure to match the frontend interface
-    const transformedAlbums = albums.map(album => {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`;
-      const createdAt = new Date(album.createdAt);
-      const updatedAt = album.updatedAt ? new Date(album.updatedAt) : createdAt;
+    // Find all public albums or albums with access URL
+    const albums = await Album.find({ isPublic: true })
+      .sort({ createdAt: -1 })
+      .lean() as IAlbum[];
       
-      return {
-        _id: album._id.toString(),
-        title: album.title,
-        description: album.description || '',
-        date: createdAt.toISOString(),
-        thumbnailImage: album.thumbnail?.public_id ? {
-          public_id: album.thumbnail.public_id,
-          url: `${baseUrl}/${album.thumbnail.public_id}`
-        } : null,
-        photos: (album.photos || []).map((photo: { public_id: string }) => ({
-          public_id: photo.public_id,
-          url: `${baseUrl}/${photo.public_id}`
-        })),
-        password: album.password || undefined,
-        createdAt: createdAt.toISOString(),
-        updatedAt: updatedAt.toISOString()
-      };
-    });
+    console.log('Albums from DB:', JSON.stringify(albums, null, 2));
+    
+    // Transform the data for the frontend
+    const responseData = albums.map(album => ({
+      id: album._id.toString(),
+      title: album.title,
+      description: album.description || '',
+      thumbnail: album.thumbnail,
+      accessUrl: album.accessUrl,
+      isPublic: album.isPublic,
+      photoCount: album.photos?.length || 0,
+      createdAt: album.createdAt,
+      updatedAt: album.updatedAt
+    }));
 
-    console.log('Final transformed albums:', JSON.stringify(transformedAlbums, null, 2));
-    return NextResponse.json({ albums: transformedAlbums });
+    return NextResponse.json({ albums: responseData });
   } catch (error) {
     console.error("Error fetching albums:", error);
     return NextResponse.json(
@@ -86,36 +76,47 @@ export async function POST(request: Request) {
       )
     );
 
-    const { db } = await connectToDatabase();
-    const album = {
+    // Create a unique access URL
+    const accessUrl = uuidv4();
+
+    // Create album in database
+    const album = new Album({
       title,
       description: description || '',
+      accessUrl,
       thumbnail: {
         public_id: thumbnailResult.public_id,
         url: thumbnailResult.secure_url,
       },
-      photos: photoResults.map((result) => ({
+      photos: photoResults.map((result, index) => ({
         public_id: result.public_id,
         url: result.secure_url,
+        filename: photoFiles[index].name,
+        size: photoFiles[index].size,
+        format: result.format,
+        width: result.width,
+        height: result.height
       })),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      password: password || undefined
-    };
+      password: password || undefined,
+      isPublic: false // Default to private
+    });
 
-    const result = await db.collection("albums").insertOne(album);
-    const createdAlbum = {
-      _id: result.insertedId.toString(),
+    await album.save();
+
+    // Prepare response data
+    const responseData = {
+      id: album._id,
       title: album.title,
       description: album.description,
-      date: album.createdAt.toISOString(),
-      thumbnailImage: album.thumbnail.public_id,
-      photos: album.photos.map(photo => photo.public_id),
-      password: album.password,
-      createdAt: album.createdAt.toISOString(),
-      updatedAt: album.updatedAt.toISOString()
+      accessUrl: album.accessUrl,
+      thumbnail: album.thumbnail,
+      photos: album.photos,
+      isPublic: album.isPublic,
+      createdAt: album.createdAt,
+      updatedAt: album.updatedAt
     };
-    return NextResponse.json({ album: createdAlbum });
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Error creating album:", error);
     return NextResponse.json(

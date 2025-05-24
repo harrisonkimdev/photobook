@@ -6,6 +6,7 @@ export interface IImage {
 }
 
 export interface IAlbum extends Document {
+  _id: Types.ObjectId
   title: string
   description: string
   password?: string
