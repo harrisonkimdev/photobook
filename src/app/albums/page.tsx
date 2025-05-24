@@ -100,20 +100,22 @@ export default function AlbumsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {albums.map((album) => (
-              <Link
-                key={album._id}
-                href={`/albums/${album._id}`}
-                className="group"
-              >
-                <div className="bg-white dark:bg-primary-800 rounded-lg shadow-lg overflow-hidden transition-transform duration-200 hover:scale-105">
-                  <div className="relative aspect-[4/3]">
-                    <CldImage
-                      src={album.thumbnailImage}
-                      alt={album.title}
-                      width="800"
-                      height="600"
-                      className="object-cover w-full h-full"
-                    />
+              <div key={album._id} className="group relative block overflow-hidden rounded-lg bg-white shadow-md transition-shadow duration-300 hover:shadow-xl dark:bg-gray-800">
+                <Link href={`/albums/${album._id}`} className="block">
+                  <div className="relative h-48 overflow-hidden">
+                    {album.thumbnailImage?.url && (
+                      <CldImage
+                        src={album.thumbnailImage.url}
+                        alt={album.title}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        priority
+                        crop="fill"
+                        gravity="auto"
+                        quality="80"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                   </div>
                   <div className="p-6">
@@ -121,15 +123,21 @@ export default function AlbumsPage() {
                       {album.title}
                     </h2>
                     <p className="text-sm text-primary-600 dark:text-primary-300">
-                      {new Date(album.date).toLocaleDateString('en-US', {
+                      {new Date(album.date).toLocaleDateString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
+                        weekday: 'long'
                       })}
                     </p>
+                    {album.description && (
+                      <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                        {album.description}
+                      </p>
+                    )}
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         )}

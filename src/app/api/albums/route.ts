@@ -11,44 +11,31 @@ export async function GET() {
     const albums = await db.collection("albums").find({}).toArray();
     console.log('Raw albums from DB:', JSON.stringify(albums, null, 2));
     
-    // If no albums exist, create a test album
-    if (albums.length === 0) {
-      console.log('No albums found, creating test album...');
-      const testAlbum = {
-        title: "Test Album",
-        description: "This is a test album",
-        thumbnail: {
-          public_id: "photobook-9mo4/i0mplqvn8dx5zjn3emj0",
-          url: "https://res.cloudinary.com/de6ndbmhd/image/upload/photobook-9mo4/i0mplqvn8dx5zjn3emj0.jpg"
-        },
-        photos: [{
-          public_id: "photobook-9mo4/i0mplqvn8dx5zjn3emj0",
-          url: "https://res.cloudinary.com/de6ndbmhd/image/upload/photobook-9mo4/i0mplqvn8dx5zjn3emj0.jpg"
-        }],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      const result = await db.collection("albums").insertOne(testAlbum);
-      console.log('Test album created:', result);
-      
-      // Fetch the newly created album
-      const newAlbums = await db.collection("albums").find({}).toArray();
-      albums.push(...newAlbums);
-    }
-
     // Transform the data structure to match the frontend interface
-    const transformedAlbums = albums.map(album => ({
-      _id: album._id.toString(),
-      title: album.title,
-      description: album.description || '',
-      date: album.createdAt.toISOString(),
-      thumbnailImage: album.thumbnail.public_id,
-      photos: album.photos.map((photo: { public_id: string }) => photo.public_id),
-      password: album.password || undefined,
-      createdAt: album.createdAt.toISOString(),
-      updatedAt: album.updatedAt ? album.updatedAt.toISOString() : album.createdAt.toISOString()
-    }));
+    const transformedAlbums = albums.map(album => {
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`;
+      const createdAt = new Date(album.createdAt);
+      const updatedAt = album.updatedAt ? new Date(album.updatedAt) : createdAt;
+      
+      return {
+        _id: album._id.toString(),
+        title: album.title,
+        description: album.description || '',
+        date: createdAt.toISOString(),
+        thumbnailImage: album.thumbnail?.public_id ? {
+          public_id: album.thumbnail.public_id,
+          url: `${baseUrl}/${album.thumbnail.public_id}`
+        } : null,
+        photos: (album.photos || []).map((photo: { public_id: string }) => ({
+          public_id: photo.public_id,
+          url: `${baseUrl}/${photo.public_id}`
+        })),
+        password: album.password || undefined,
+        createdAt: createdAt.toISOString(),
+        updatedAt: updatedAt.toISOString()
+      };
+    });
 
     console.log('Final transformed albums:', JSON.stringify(transformedAlbums, null, 2));
     return NextResponse.json({ albums: transformedAlbums });

@@ -1,11 +1,16 @@
+export interface ICloudinaryImage {
+  public_id: string;
+  url: string;
+}
+
 export interface IAlbum {
   _id: string;
   title: string;
   date: string;
-  thumbnailImage: string;  // This will be the Cloudinary public_id
-  photos: string[];        // These will be Cloudinary public_ids
+  thumbnailImage: ICloudinaryImage | null;
+  photos: ICloudinaryImage[];
   password?: string;
   createdAt: string;
   updatedAt: string;
-  description?: string;    // Adding optional description field
-} 
+  description?: string;
+}
