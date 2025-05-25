@@ -3,6 +3,7 @@ import { Document, Types } from "mongoose"
 export interface IImage {
   public_id: string
   url: string
+  caption?: string
 }
 
 export interface IAlbum extends Document {

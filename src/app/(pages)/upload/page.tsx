@@ -36,7 +36,7 @@ const UploadPage = () => {
   } = useFormHandlers(formData, setFormData, state, setState);
 
   return (
-    <PasswordFormWrapper albumId={null}>
+    <PasswordFormWrapper>
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6 w-full max-w-lg">
           <h2 className="text-2xl font-bold text-center text-gray-700">새 앨범 만들기</h2>

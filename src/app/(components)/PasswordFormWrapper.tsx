@@ -21,32 +21,38 @@ export default function PasswordFormWrapper({ albumId, onAuthenticated, children
     setError(null);
     setLoading(true);
 
+    // 앨범 ID가 없는 경우 (예: 업로드 페이지)
+    if (!albumId) {
+      setIsAuthenticated(true);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/verifyPassword', {
+      // 새로운 API 엔드포인트로 비밀번호 검증 요청
+      const response = await fetch(`/api/albums/${albumId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          password,
-          albumId,
-        }),
+        body: JSON.stringify({ password }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.isValid) {
         setIsAuthenticated(true);
         if (onAuthenticated) {
           onAuthenticated();
         } else {
-          router.push(albumId ? `/albums/${albumId}` : '/admin');
+          // 인증 성공 후 페이지 새로고침
+          router.refresh();
         }
       } else {
-        setError(data.message || 'Invalid password');
+        setError(data.message || '잘못된 비밀번호입니다');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred. Please try again.');
+      console.error('비밀번호 검증 오류:', error);
+      setError(error instanceof Error ? error.message : '오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

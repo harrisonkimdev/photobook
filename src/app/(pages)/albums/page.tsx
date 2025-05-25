@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CldImage } from 'next-cloudinary';
-import Navigation from '../(components)/(layouts)/Navigation';
+import Navigation from '@/app/(components)/(layouts)/Navigation';
 import { IAlbum } from '@/types/album';
 
 export default function AlbumsPage() {
